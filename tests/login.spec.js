@@ -1,19 +1,35 @@
-// @ts-check
 import { test, expect } from '@playwright/test';
 
-test('login', async ({ page }) => {
-  await page.goto('https://playwright.dev/');
+test.describe('TTACart Login Functionality', () => {
+  
+  test.beforeEach(async ({ page }) => {
+    // Navigate to the base URL (TTACart login page)
+    await page.goto('https://app.thetestingacademy.com/playwright/ttacart/');
+  });
 
-  // Expect a title "to contain" a substring.
-  await expect(page).toHaveTitle(/Playwright/);
-});
+  test('should login successfully with valid credentials', async ({ page }) => {
+    // Fill in username and password
+    await page.getByRole('textbox', { name: 'Username' }).fill('standard_user');
+    await page.getByPlaceholder('Password').fill('tta_secret');
+    
+    // Click the login button
+    await page.getByRole('button', { name: 'Login' }).click();
 
-test('get started link', async ({ page }) => {
-  await page.goto('https://playwright.dev/');
+    // Verify successful redirection to the inventory page
+    await expect(page).toHaveURL(/.*inventory/);
+  });
 
-  // Click the get started link.
-  await page.getByRole('link', { name: 'Get started' }).click();
+  test('should show an error with invalid credentials', async ({ page }) => {
+    // Fill in incorrect details
+    await page.getByRole('textbox', { name: 'Username' }).fill('invalid_user');
+    await page.getByPlaceholder('Password').fill('wrong_password');
+    
+    // Click login
+    await page.getByRole('button', { name: 'Login' }).click();
 
-  // Expects page to have a heading with the name of Installation.
-  await expect(page.getByRole('heading', { name: 'Installation' })).toBeVisible();
+    // Verify error message container appears
+    const errorMessage = await page.getByRole('alert');
+    await expect(errorMessage).toBeVisible();
+  });
+
 });
