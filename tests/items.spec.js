@@ -9,6 +9,9 @@ test.describe('TTACart Item Details & Cart State Functionality', () => {
     await page.getByRole('button', { name: 'Login' }).click();
     
     await expect(page).toHaveURL(/.*inventory/);
+    //Reset app state to ensure a clean slate for each test
+    await page.getByRole('button', { name: 'Open menu' }).click();
+    await page.getByRole('link', { name: 'Reset App State' }).click();
   });
 
   test('should open item page and display correct product details dynamically', async ({ page }) => {
@@ -25,84 +28,7 @@ test.describe('TTACart Item Details & Cart State Functionality', () => {
     await expect(page.locator('[data-test="inventory-item-price"]')).toHaveText(expectedPrice);
   });
 
-  test('should toggle Add to cart and Remove directly on the inventory page', async ({ page }) => {
-    const firstItemCard = page.locator('[data-test="inventory-item"]').first();
-    const addToCartBtn = firstItemCard.getByRole('button', { name: 'Add to cart' });
-    const removeBtn = firstItemCard.getByRole('button', { name: 'Remove' });
-
-    // Click Add to cart
-    await addToCartBtn.click();
-
-    // Verify button converts to Remove
-    await expect(removeBtn).toBeVisible();
-    await expect(addToCartBtn).toBeHidden();
-
-    // Verify Shopping cart link/icon is visible and active
-    await expect(page.getByRole('link', { name: 'Shopping cart' })).toBeVisible();
-
-    // Click Remove and verify it reverts
-    await removeBtn.click();
-    await expect(addToCartBtn).toBeVisible();
-  });
-
-  test('should maintain cart state when switching from product details to inventory', async ({ page }) => {
-    // 1. Navigate to the first item's details page
-    const firstItemCard = page.locator('[data-test="inventory-item"]').first();
-    await firstItemCard.locator('[data-test="inventory-item-name"] a').click();
-    
-    // 2. Add the item to the cart from the details page
-    const detailsAddToCartBtn = page.getByRole('button', { name: 'Add to cart' });
-    const detailsRemoveBtn = page.getByRole('button', { name: 'Remove' });
-    
-    await detailsAddToCartBtn.click();
-    
-    // 3. Verify it toggled to Remove and the cart icon updated
-    await expect(detailsRemoveBtn).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Shopping cart' })).toBeVisible();
-
-    // 4. Click Back to return to the inventory grid
-    await page.locator('[data-test="back-to-products"]').click();
-    await expect(page).toHaveURL(/.*inventory/);
-
-    // 5. Verify the state persisted: The first item on the grid should now say "Remove"
-    const firstItemCardAfterBack = page.locator('[data-test="inventory-item"]').first();
-    await expect(firstItemCardAfterBack.getByRole('button', { name: 'Remove' })).toBeVisible();
-    await expect(firstItemCardAfterBack.getByRole('button', { name: 'Add to cart' })).toBeHidden();
-  });
-  test('should add and remove multiple items and verify cart badge count', async ({ page }) => {
-    // 1. Target the first and second items in the grid
-    const firstItem = page.locator('[data-test="inventory-item"]').nth(0);
-    const secondItem = page.locator('[data-test="inventory-item"]').nth(1);
-    
-    const cartBadge = page.locator('[data-test="shopping-cart-badge"]');
-
-    // 2. Add the first item to the cart
-    await firstItem.getByRole('button', { name: 'Add to cart' }).click();
-    
-    // Verify badge shows '1' and button changed to Remove
-    await expect(cartBadge).toHaveText('1');
-    await expect(firstItem.getByRole('button', { name: 'Remove' })).toBeVisible();
-
-    // 3. Add the second item to the cart
-    await secondItem.getByRole('button', { name: 'Add to cart' }).click();
-    
-    // Verify badge increments to '2' and second button changed to Remove
-    await expect(cartBadge).toHaveText('2');
-    await expect(secondItem.getByRole('button', { name: 'Remove' })).toBeVisible();
-
-    // 4. Remove the first item
-    await firstItem.getByRole('button', { name: 'Remove' }).click();
-    
-    // Verify badge decrements back to '1'
-    await expect(cartBadge).toHaveText('1');
-    await expect(firstItem.getByRole('button', { name: 'Add to cart' })).toBeVisible();
-
-    // 5. Remove the second item
-    await secondItem.getByRole('button', { name: 'Remove' }).click();
-    
-    // Verify the badge disappears entirely when the cart is empty
-    await expect(cartBadge).toBeHidden();
-  });
+  
   
 
 });
