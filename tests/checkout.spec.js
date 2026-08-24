@@ -14,11 +14,9 @@ test.describe('Checkout page should work as intended', () => {
     cartPage = new CartPage(page);
     checkoutPage = new CheckoutPage(page);
 
-    // Perform a real UI login
-    await page.goto(ROUTES.BASE_URL);
-    await page.locator('[data-test="username"]').fill(TEST_DATA.users.validUser);
-    await page.locator('[data-test="password"]').fill(TEST_DATA.users.password);
-    await page.locator('#login-button').click();
+    // Inject auth script with double quotes
+    await inventoryPage.setAuthSession(TEST_DATA.users.validUser);
+    await inventoryPage.navigate(`${ROUTES.BASE_URL}inventory.html`);
     
     await expect(page).toHaveURL(ROUTES.INVENTORY);
     await inventoryPage.resetAppState();

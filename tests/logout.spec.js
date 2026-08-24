@@ -12,9 +12,9 @@ test.describe('User should be able to log out correctly', () => {
         loginPage = new LoginPage(page);
         inventoryPage = new InventoryPage(page);
 
-        // We can just use the login page object here since it's already imported
-        await loginPage.navigate(ROUTES.BASE_URL);
-        await loginPage.login(TEST_DATA.users.validUser, TEST_DATA.users.password);
+        // Inject auth script with double quotes
+        await inventoryPage.setAuthSession(TEST_DATA.users.validUser);
+        await inventoryPage.navigate(`${ROUTES.BASE_URL}inventory.html`);
         
         await expect(page).toHaveURL(ROUTES.INVENTORY);
     });
