@@ -54,7 +54,7 @@ test.describe('Checkout page should work as intended', () => {
     await expect(page).toHaveURL(/.*cart/);
 
     // Verify the item is still in the cart
-    
+
     await expect(
       page.locator('[data-test="inventory-item-name"]')
     ).toHaveText(itemName);
@@ -62,5 +62,67 @@ test.describe('Checkout page should work as intended', () => {
     await expect(
       page.locator('[data-test="inventory-item-price"]')
     ).toHaveText(itemPrice);
+  });
+  test('Verify that the checkout process is successful upon completion', async ({
+    page,
+  }) => {
+    // Fill in the customer details
+    await page.getByRole('textbox', { name: 'First Name' }).fill('John');
+    await page.getByRole('textbox', { name: 'Last Name' }).fill('Doe');
+    await page.getByRole('textbox', { name: 'Zip/Postal Code' }).fill('12345');
+
+    await page.getByRole('button', { name: 'Continue' }).click();
+    // Verify that we are on checkout-step-two page
+    await expect(page).toHaveURL(/.*checkout-step-two/);
+    // Verify the item is still in the cart
+    await expect(
+      page.locator('[data-test="inventory-item-name"]')
+    ).toHaveText(itemName);
+    // Verify the item price is still correct
+    await expect(
+      page.locator('[data-test="inventory-item-price"]')
+    ).toHaveText(itemPrice);
+    //Click on the Finish button to complete the checkout process
+    await page.getByRole('button', { name: 'Finish' }).click();
+    // Verify that we are on the complete page
+    await expect(page).toHaveURL(/.*checkout-complete/);
+    // Verify other details on the complete page
+
+    await expect(page.locator("//*[name()='circle' and contains(@cx,'50')]")).toBeVisible();
+
+    await expect(page.getByText('Checkout: Complete!', { exact: true })).toBeVisible();
+
+    await expect(
+      page.getByText(
+        'Your order has been dispatched, and will arrive just as fast as the TTA Express pony can get there!',
+        { exact: true }
+      )
+    ).toBeVisible();
+    //Verify cart is empty after checkout completion
+    await expect(page.locator('[data-test="shopping-cart-badge"]')).toBeHidden();
+
+
+  });
+  test('Verify that the Back home button works correctly', async ({
+    page,
+  }) => {
+    // Fill in the customer details
+    await page.getByRole('textbox', { name: 'First Name' }).fill('John');
+    await page.getByRole('textbox', { name: 'Last Name' }).fill('Doe');
+    await page.getByRole('textbox', { name: 'Zip/Postal Code' }).fill('12345');
+
+    await page.getByRole('button', { name: 'Continue' }).click();
+    // Verify that we are on checkout-step-two page
+    await expect(page).toHaveURL(/.*checkout-step-two/);
+    
+    //Click on the Finish button to complete the checkout process
+    await page.getByRole('button', { name: 'Finish' }).click();
+    // Verify that we are on the complete page
+    await expect(page).toHaveURL(/.*checkout-complete/);
+    // Click on the Back home button to return to inventory page
+    await page.getByRole('link', { name: 'Back Home' }).click();
+    //Verify that we are back on the inventory page
+    await expect(page).toHaveURL(/.*inventory/);
+
   });
 });
