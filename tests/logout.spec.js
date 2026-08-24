@@ -12,8 +12,10 @@ test.describe('User should be able to log out correctly', () => {
         loginPage = new LoginPage(page);
         inventoryPage = new InventoryPage(page);
 
+        // We can just use the login page object here since it's already imported
         await loginPage.navigate(ROUTES.BASE_URL);
         await loginPage.login(TEST_DATA.users.validUser, TEST_DATA.users.password);
+        
         await expect(page).toHaveURL(ROUTES.INVENTORY);
     });
 

@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../pages/LoginPage.js';
 import { InventoryPage } from '../pages/InventoryPage.js';
 import { CartPage } from '../pages/CartPage.js';
 import { ItemDetailsPage } from '../pages/ItemDetailsPage.js';
@@ -10,13 +9,17 @@ test.describe('Cart page should work as intended', () => {
   let inventoryPage, cartPage, itemDetailsPage;
 
   test.beforeEach(async ({ page }) => {
-    const loginPage = new LoginPage(page);
     inventoryPage = new InventoryPage(page);
     cartPage = new CartPage(page);
     itemDetailsPage = new ItemDetailsPage(page);
 
-    await loginPage.navigate(ROUTES.BASE_URL);
-    await loginPage.login(TEST_DATA.users.validUser, TEST_DATA.users.password);
+    // 1. Perform a real UI login
+    await page.goto(ROUTES.BASE_URL);
+    await page.locator('[data-test="username"]').fill(TEST_DATA.users.validUser);
+    await page.locator('[data-test="password"]').fill(TEST_DATA.users.password);
+    await page.locator('#login-button').click();
+    
+    // 2. Verify login succeeded
     await expect(page).toHaveURL(ROUTES.INVENTORY);
     await inventoryPage.resetAppState();
   });

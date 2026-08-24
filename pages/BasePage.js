@@ -1,21 +1,29 @@
 export class BasePage {
     constructor(page) {
         this.page = page;
-        // Shared Nav & Menu Locators
         this.menuBtn = page.getByRole('button', { name: 'Open menu' });
         this.closeMenuBtn = page.getByRole('button', { name: 'Close menu' });
         this.menuContainer = page.getByRole('complementary');
-        
-        // Menu Links
         this.resetAppStateLink = page.getByRole('link', { name: 'Reset App State' });
         this.logoutLink = page.getByRole('link', { name: 'Logout' });
         this.aboutLink = page.getByRole('link', { name: 'About' });
         this.allItemsLink = page.getByRole('link', { name: 'All Items' });
-        
-        // Shared Cart Locators
         this.cartIconBtn = page.locator("//*[name()='path' and contains(@d,'M3 3h2l2.4')]");
         this.cartBadge = page.locator('[data-test="shopping-cart-badge"]');
         this.cartLink = page.getByRole('link', { name: 'Shopping cart' });
+    }
+
+    /**
+     * Bypasses UI login by injecting localStorage and sessionStorage with double quotes
+     */
+    async setAuthSession(username) {
+        await this.page.addInitScript((user) => {
+            // Forces the value to be "standard_user" (with quotes)
+            const storedValue = `"${user}"`; 
+            window.localStorage.setItem('tta-cart-user', storedValue);
+            window.sessionStorage.setItem('tta-cart-user', storedValue);
+            window.sessionStorage.setItem('session-username', storedValue);
+        }, username);
     }
 
     async navigate(url) {

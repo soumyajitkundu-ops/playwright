@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { LoginPage } from '../pages/LoginPage.js';
 import { InventoryPage } from '../pages/InventoryPage.js';
 import { ROUTES } from '../constants/routes.js';
 import { TEST_DATA } from '../constants/testData.js';
@@ -8,11 +7,14 @@ test.describe('flyout should appear and disappear correctly', () => {
   let inventoryPage;
 
   test.beforeEach(async ({ page }) => {
-    const loginPage = new LoginPage(page);
     inventoryPage = new InventoryPage(page);
 
-    await loginPage.navigate(ROUTES.BASE_URL);
-    await loginPage.login(TEST_DATA.users.validUser, TEST_DATA.users.password);
+    // Perform a real UI login
+    await page.goto(ROUTES.BASE_URL);
+    await page.locator('[data-test="username"]').fill(TEST_DATA.users.validUser);
+    await page.locator('[data-test="password"]').fill(TEST_DATA.users.password);
+    await page.locator('#login-button').click();
+    
     await expect(page).toHaveURL(ROUTES.INVENTORY);
   });
 
