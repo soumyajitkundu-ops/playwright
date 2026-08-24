@@ -8,8 +8,6 @@ test.describe('TTACart Inventory Sorting Functionality', () => {
 
   test.beforeEach(async ({ page }) => {
     inventoryPage = new InventoryPage(page);
-    
-    // Perform a real UI login
     await page.goto(ROUTES.BASE_URL);
     await page.locator('[data-test="username"]').fill(TEST_DATA.users.validUser);
     await page.locator('[data-test="password"]').fill(TEST_DATA.users.password);
