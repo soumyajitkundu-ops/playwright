@@ -1,128 +1,76 @@
 import { test, expect } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage.js';
+import { InventoryPage } from '../pages/InventoryPage.js';
+import { CartPage } from '../pages/CartPage.js';
+import { CheckoutPage } from '../pages/CheckoutPage.js';
+import { ROUTES } from '../constants/routes.js';
+import { TEST_DATA } from '../constants/testData.js';
 
 test.describe('Checkout page should work as intended', () => {
-  let itemName;
-  let itemPrice;
+  let inventoryPage, cartPage, checkoutPage;
+  let itemName, itemPrice;
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('https://app.thetestingacademy.com/playwright/ttacart/');
+    const loginPage = new LoginPage(page);
+    inventoryPage = new InventoryPage(page);
+    cartPage = new CartPage(page);
+    checkoutPage = new CheckoutPage(page);
 
-    await page.getByRole('textbox', { name: 'Username' }).fill('standard_user');
-    await page.getByPlaceholder('Password').fill('tta_secret');
-    await page.getByRole('button', { name: 'Login' }).click();
+    await loginPage.navigate(ROUTES.BASE_URL);
+    await loginPage.login(TEST_DATA.users.validUser, TEST_DATA.users.password);
+    await expect(page).toHaveURL(ROUTES.INVENTORY);
+    await inventoryPage.resetAppState();
 
-    await expect(page).toHaveURL(/.*inventory/);
+    const firstItemCard = await inventoryPage.getItemByIndex(0);
+    itemName = await firstItemCard.locator('[data-test="inventory-item-name"]').innerText();
+    itemPrice = await firstItemCard.locator('[data-test="inventory-item-price"]').innerText();
 
-    // Reset app state to ensure a clean slate for each test
-    await page.getByRole('button', { name: 'Open menu' }).click();
-    await page.getByRole('link', { name: 'Reset App State' }).click();
+    const addToCartBtn = await inventoryPage.getAddToCartBtn(firstItemCard);
+    await addToCartBtn.click();
 
-    // Add the first item to the cart
-    const firstItemCard = page
-      .locator('[data-test="inventory-item"]')
-      .first();
-
-    itemName = await firstItemCard
-      .locator('[data-test="inventory-item-name"]')
-      .innerText();
-
-    itemPrice = await firstItemCard
-      .locator('[data-test="inventory-item-price"]')
-      .innerText();
-
-    await firstItemCard
-      .getByRole('button', { name: 'Add to cart' })
-      .click();
-
-    // Click on the cart icon to visit cart page
-    const cartButton = await page.locator("//*[name()='path' and contains(@d,'M3 3h2l2.4')]");
-    await cartButton.click();
-
-    await expect(page).toHaveURL(/.*cart/);
-    // Click on the Checkout button to visit checkout-step-one page
-    await page.getByRole('link', { name: 'Checkout' }).click();
-    await expect(page).toHaveURL(/.*checkout-step-one/);
-  });
-
-  test('Cancel button should redirect to cart page with item in cart', async ({
-    page,
-  }) => {
-    // Already on checkout-step-one because of beforeEach
-
-    await page.getByRole('link', { name: 'Cancel' }).click();
-
-    await expect(page).toHaveURL(/.*cart/);
-
-    // Verify the item is still in the cart
-
-    await expect(
-      page.locator('[data-test="inventory-item-name"]')
-    ).toHaveText(itemName);
-
-    await expect(
-      page.locator('[data-test="inventory-item-price"]')
-    ).toHaveText(itemPrice);
-  });
-  test('Verify that the checkout process is successful upon completion', async ({
-    page,
-  }) => {
-    // Fill in the customer details
-    await page.getByRole('textbox', { name: 'First Name' }).fill('John');
-    await page.getByRole('textbox', { name: 'Last Name' }).fill('Doe');
-    await page.getByRole('textbox', { name: 'Zip/Postal Code' }).fill('12345');
-
-    await page.getByRole('button', { name: 'Continue' }).click();
-    // Verify that we are on checkout-step-two page
-    await expect(page).toHaveURL(/.*checkout-step-two/);
-    // Verify the item is still in the cart
-    await expect(
-      page.locator('[data-test="inventory-item-name"]')
-    ).toHaveText(itemName);
-    // Verify the item price is still correct
-    await expect(
-      page.locator('[data-test="inventory-item-price"]')
-    ).toHaveText(itemPrice);
-    //Click on the Finish button to complete the checkout process
-    await page.getByRole('button', { name: 'Finish' }).click();
-    // Verify that we are on the complete page
-    await expect(page).toHaveURL(/.*checkout-complete/);
-    // Verify other details on the complete page
-
-    await expect(page.locator("//*[name()='circle' and contains(@cx,'50')]")).toBeVisible();
-
-    await expect(page.getByText('Checkout: Complete!', { exact: true })).toBeVisible();
-
-    await expect(
-      page.getByText(
-        'Your order has been dispatched, and will arrive just as fast as the TTA Express pony can get there!',
-        { exact: true }
-      )
-    ).toBeVisible();
-    //Verify cart is empty after checkout completion
-    await expect(page.locator('[data-test="shopping-cart-badge"]')).toBeHidden();
-
-
-  });
-  test('Verify that the Back home button works correctly', async ({
-    page,
-  }) => {
-    // Fill in the customer details
-    await page.getByRole('textbox', { name: 'First Name' }).fill('John');
-    await page.getByRole('textbox', { name: 'Last Name' }).fill('Doe');
-    await page.getByRole('textbox', { name: 'Zip/Postal Code' }).fill('12345');
-
-    await page.getByRole('button', { name: 'Continue' }).click();
-    // Verify that we are on checkout-step-two page
-    await expect(page).toHaveURL(/.*checkout-step-two/);
+    await inventoryPage.goToCart();
+    await expect(page).toHaveURL(ROUTES.CART);
     
-    //Click on the Finish button to complete the checkout process
-    await page.getByRole('button', { name: 'Finish' }).click();
-    // Verify that we are on the complete page
-    await expect(page).toHaveURL(/.*checkout-complete/);
-    // Click on the Back home button to return to inventory page
-    await page.getByRole('link', { name: 'Back Home' }).click();
-    //Verify that we are back on the inventory page
-    await expect(page).toHaveURL(/.*inventory/);
+    await cartPage.checkoutBtn.click();
+    await expect(page).toHaveURL(ROUTES.CHECKOUT_STEP_ONE);
+  });
 
+  test('Cancel button should redirect to cart page with item in cart', async ({ page }) => {
+    await checkoutPage.cancelBtn.click();
+    await expect(page).toHaveURL(ROUTES.CART);
+    await expect(cartPage.itemName).toHaveText(itemName);
+    await expect(cartPage.itemPrice).toHaveText(itemPrice);
+  });
+
+  test('Verify that the checkout process is successful upon completion', async ({ page }) => {
+    await checkoutPage.fillCheckoutDetails(
+        TEST_DATA.checkout.firstName, 
+        TEST_DATA.checkout.lastName, 
+        TEST_DATA.checkout.zipCode
+    );
+    
+    await expect(page).toHaveURL(ROUTES.CHECKOUT_STEP_TWO);
+    await expect(checkoutPage.itemName).toHaveText(itemName);
+    await expect(checkoutPage.itemPrice).toHaveText(itemPrice);
+    
+    await checkoutPage.finishBtn.click();
+    await expect(page).toHaveURL(ROUTES.CHECKOUT_COMPLETE);
+    
+    await expect(checkoutPage.successIcon).toBeVisible();
+    await expect(checkoutPage.getSuccessMessage(TEST_DATA.messages.checkoutComplete)).toBeVisible();
+    await expect(checkoutPage.getSuccessMessage(TEST_DATA.messages.dispatchMessage)).toBeVisible();
+    await expect(checkoutPage.cartBadge).toBeHidden();
+  });
+
+  test('Verify that the Back home button works correctly', async ({ page }) => {
+    await checkoutPage.fillCheckoutDetails(
+        TEST_DATA.checkout.firstName, 
+        TEST_DATA.checkout.lastName, 
+        TEST_DATA.checkout.zipCode
+    );
+    
+    await checkoutPage.finishBtn.click();
+    await checkoutPage.backHomeBtn.click();
+    await expect(page).toHaveURL(ROUTES.INVENTORY);
   });
 });

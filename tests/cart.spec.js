@@ -1,131 +1,97 @@
 import { test, expect } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage.js';
+import { InventoryPage } from '../pages/InventoryPage.js';
+import { CartPage } from '../pages/CartPage.js';
+import { ItemDetailsPage } from '../pages/ItemDetailsPage.js';
+import { ROUTES } from '../constants/routes.js';
+import { TEST_DATA } from '../constants/testData.js';
 
 test.describe('Cart page should work as intended', () => {
-  
+  let inventoryPage, cartPage, itemDetailsPage;
+
   test.beforeEach(async ({ page }) => {
-    await page.goto('https://app.thetestingacademy.com/playwright/ttacart/');
-    await page.getByRole('textbox', { name: 'Username' }).fill('standard_user');
-    await page.getByPlaceholder('Password').fill('tta_secret');
-    await page.getByRole('button', { name: 'Login' }).click();
-    
-    await expect(page).toHaveURL(/.*inventory/);
-    //Reset app state to ensure a clean slate for each test
-    await page.getByRole('button', { name: 'Open menu' }).click();
-    await page.getByRole('link', { name: 'Reset App State' }).click();
+    const loginPage = new LoginPage(page);
+    inventoryPage = new InventoryPage(page);
+    cartPage = new CartPage(page);
+    itemDetailsPage = new ItemDetailsPage(page);
+
+    await loginPage.navigate(ROUTES.BASE_URL);
+    await loginPage.login(TEST_DATA.users.validUser, TEST_DATA.users.password);
+    await expect(page).toHaveURL(ROUTES.INVENTORY);
+    await inventoryPage.resetAppState();
   });
 
-test('Empty cart should display correct message', async ({ page }) => {
-    // Click on the cart icon to visit cart page
-    const cartButton = await page.locator("//*[name()='path' and contains(@d,'M3 3h2l2.4')]");
-    await cartButton.click();
-    await expect(page).toHaveURL(/.*cart/);
-    await expect(page.getByText('Your cart is empty.', { exact: true })).toBeVisible();
-});
-test('Continue to shopping buton should redirect to inventory page', async ({ page }) => {
-    // Click on the cart icon to visit cart page
-    const cartButton = await page.locator("//*[name()='path' and contains(@d,'M3 3h2l2.4')]");
-    await cartButton.click();
-    await expect(page).toHaveURL(/.*cart/);
-    // Click on the Continue to shopping button
-    await page.getByRole('link', { name: 'Continue Shopping' }).click();
-    await expect(page).toHaveURL(/.*inventory/);
-});
-test('Added item can be removed from cart', async ({ page }) => {
-    //Pick the first item in the inventory grid 
-    const firstItemCard = page.locator('[data-test="inventory-item"]').first();
-    const addToCartBtn = firstItemCard.getByRole('button', { name: 'Add to cart' });
-    // Click Add to cart
+  test('Empty cart should display correct message', async ({ page }) => {
+    await inventoryPage.goToCart();
+    await expect(page).toHaveURL(ROUTES.CART);
+    await expect(cartPage.getEmptyCartMessage(TEST_DATA.messages.emptyCart)).toBeVisible();
+  });
+
+  test('Continue to shopping button should redirect to inventory page', async ({ page }) => {
+    await inventoryPage.goToCart();
+    await expect(page).toHaveURL(ROUTES.CART);
+    await cartPage.continueShoppingBtn.click();
+    await expect(page).toHaveURL(ROUTES.INVENTORY);
+  });
+
+  test('Added item can be removed from cart', async ({ page }) => {
+    const firstItem = await inventoryPage.getItemByIndex(0);
+    const addToCartBtn = await inventoryPage.getAddToCartBtn(firstItem);
     await addToCartBtn.click();
     
-    // Click on the cart icon to visit cart page
-    const cartButton = page.locator("//*[name()='path' and contains(@d,'M3 3h2l2.4')]");
-    await cartButton.click();
-    await expect(page).toHaveURL(/.*cart/);
+    await inventoryPage.goToCart();
+    await expect(page).toHaveURL(ROUTES.CART);
     
-    // Verify the empty cart message works when the only item is removed from the cart
-    const removeBtn = await page.getByRole('button', { name: 'Remove' });
-    await removeBtn.click();
-    
-    await expect(page.getByText('Your cart is empty.', { exact: true })).toBeVisible();
-});
-  test('should toggle Add to cart and Remove directly on the inventory page', async ({ page }) => {
-    const firstItemCard = page.locator('[data-test="inventory-item"]').first();
-    const addToCartBtn = firstItemCard.getByRole('button', { name: 'Add to cart' });
-    const removeBtn = firstItemCard.getByRole('button', { name: 'Remove' });
+    await cartPage.removeBtn.click();
+    await expect(cartPage.getEmptyCartMessage(TEST_DATA.messages.emptyCart)).toBeVisible();
+  });
 
-    // Click Add to cart
+  test('should toggle Add to cart and Remove directly on the inventory page', async () => {
+    const firstItem = await inventoryPage.getItemByIndex(0);
+    const addToCartBtn = await inventoryPage.getAddToCartBtn(firstItem);
+    const removeBtn = await inventoryPage.getRemoveBtn(firstItem);
+
     await addToCartBtn.click();
-
-    // Verify button converts to Remove
     await expect(removeBtn).toBeVisible();
     await expect(addToCartBtn).toBeHidden();
+    await expect(inventoryPage.cartLink).toBeVisible();
 
-    // Verify Shopping cart link/icon is visible and active
-    await expect(page.getByRole('link', { name: 'Shopping cart' })).toBeVisible();
-
-    // Click Remove and verify it reverts
     await removeBtn.click();
     await expect(addToCartBtn).toBeVisible();
   });
 
   test('should maintain cart state when switching from product details to inventory', async ({ page }) => {
-    // 1. Navigate to the first item's details page
-    const firstItemCard = page.locator('[data-test="inventory-item"]').first();
-    await firstItemCard.locator('[data-test="inventory-item-name"] a').click();
+    const firstItemCard = await inventoryPage.getItemByIndex(0);
+    await inventoryPage.clickItemTitle(firstItemCard);
     
-    // 2. Add the item to the cart from the details page
-    const detailsAddToCartBtn = page.getByRole('button', { name: 'Add to cart' });
-    const detailsRemoveBtn = page.getByRole('button', { name: 'Remove' });
-    
-    await detailsAddToCartBtn.click();
-    
-    // 3. Verify it toggled to Remove and the cart icon updated
-    await expect(detailsRemoveBtn).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Shopping cart' })).toBeVisible();
+    await itemDetailsPage.addToCartBtn.click();
+    await expect(itemDetailsPage.removeBtn).toBeVisible();
+    await expect(itemDetailsPage.cartLink).toBeVisible();
 
-    // 4. Click Back to return to the inventory grid
-    await page.locator('[data-test="back-to-products"]').click();
-    await expect(page).toHaveURL(/.*inventory/);
+    await itemDetailsPage.backToProductsBtn.click();
+    await expect(page).toHaveURL(ROUTES.INVENTORY);
 
-    // 5. Verify the state persisted: The first item on the grid should now say "Remove"
-    const firstItemCardAfterBack = page.locator('[data-test="inventory-item"]').first();
-    await expect(firstItemCardAfterBack.getByRole('button', { name: 'Remove' })).toBeVisible();
-    await expect(firstItemCardAfterBack.getByRole('button', { name: 'Add to cart' })).toBeHidden();
+    const firstItemCardAfterBack = await inventoryPage.getItemByIndex(0);
+    await expect(await inventoryPage.getRemoveBtn(firstItemCardAfterBack)).toBeVisible();
+    await expect(await inventoryPage.getAddToCartBtn(firstItemCardAfterBack)).toBeHidden();
   });
-  test('should add and remove multiple items and verify cart badge count', async ({ page }) => {
-    // 1. Target the first and second items in the grid
-    const firstItem = page.locator('[data-test="inventory-item"]').nth(0);
-    const secondItem = page.locator('[data-test="inventory-item"]').nth(1);
-    
-    const cartBadge = page.locator('[data-test="shopping-cart-badge"]');
 
-    // 2. Add the first item to the cart
-    await firstItem.getByRole('button', { name: 'Add to cart' }).click();
-    
-    // Verify badge shows '1' and button changed to Remove
-    await expect(cartBadge).toHaveText('1');
-    await expect(firstItem.getByRole('button', { name: 'Remove' })).toBeVisible();
+  test('should add and remove multiple items and verify cart badge count', async () => {
+    const firstItem = await inventoryPage.getItemByIndex(0);
+    const secondItem = await inventoryPage.getItemByIndex(1);
 
-    // 3. Add the second item to the cart
-    await secondItem.getByRole('button', { name: 'Add to cart' }).click();
-    
-    // Verify badge increments to '2' and second button changed to Remove
-    await expect(cartBadge).toHaveText('2');
-    await expect(secondItem.getByRole('button', { name: 'Remove' })).toBeVisible();
+    await (await inventoryPage.getAddToCartBtn(firstItem)).click();
+    await expect(inventoryPage.cartBadge).toHaveText('1');
+    await expect(await inventoryPage.getRemoveBtn(firstItem)).toBeVisible();
 
-    // 4. Remove the first item
-    await firstItem.getByRole('button', { name: 'Remove' }).click();
-    
-    // Verify badge decrements back to '1'
-    await expect(cartBadge).toHaveText('1');
-    await expect(firstItem.getByRole('button', { name: 'Add to cart' })).toBeVisible();
+    await (await inventoryPage.getAddToCartBtn(secondItem)).click();
+    await expect(inventoryPage.cartBadge).toHaveText('2');
+    await expect(await inventoryPage.getRemoveBtn(secondItem)).toBeVisible();
 
-    // 5. Remove the second item
-    await secondItem.getByRole('button', { name: 'Remove' }).click();
+    await (await inventoryPage.getRemoveBtn(firstItem)).click();
+    await expect(inventoryPage.cartBadge).toHaveText('1');
     
-    // Verify the badge disappears entirely when the cart is empty
-    await expect(cartBadge).toBeHidden();
+    await (await inventoryPage.getRemoveBtn(secondItem)).click();
+    await expect(inventoryPage.cartBadge).toBeHidden();
   });
-  
-
 });

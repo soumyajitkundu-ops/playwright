@@ -1,27 +1,26 @@
 import { test, expect } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage.js';
+import { InventoryPage } from '../pages/InventoryPage.js';
+import { ROUTES } from '../constants/routes.js';
+import { TEST_DATA } from '../constants/testData.js';
 
 test.describe('User should be able to log out correctly', () => {
+    let inventoryPage;
+    let loginPage;
 
     test.beforeEach(async ({ page }) => {
-        await page.goto('https://app.thetestingacademy.com/playwright/ttacart/');
-        await page.getByRole('textbox', { name: 'Username' }).fill('standard_user');
-        await page.getByPlaceholder('Password').fill('tta_secret');
-        await page.getByRole('button', { name: 'Login' }).click();
+        loginPage = new LoginPage(page);
+        inventoryPage = new InventoryPage(page);
 
-        await expect(page).toHaveURL(/.*inventory/);
+        await loginPage.navigate(ROUTES.BASE_URL);
+        await loginPage.login(TEST_DATA.users.validUser, TEST_DATA.users.password);
+        await expect(page).toHaveURL(ROUTES.INVENTORY);
     });
 
     test('user should be logged out when logout link is clicked', async ({ page }) => {
-        // Click the hamburger menu using its accessibility label
-        await page.getByRole('button', { name: 'Open menu' }).click();
-        await page.getByRole('link', { name: 'Logout' }).click();
-        // Verify the exact URL
-        await expect(page).toHaveURL('https://app.thetestingacademy.com/playwright/ttacart/');
-
-        // Verify the page title matches the browser tab
+        await inventoryPage.logout();
+        await expect(page).toHaveURL(ROUTES.BASE_URL);
         await expect(page).toHaveTitle('TTACart - Login');
-        await expect(page.getByRole('button', { name: 'Login' })).toBeVisible();
+        await expect(loginPage.loginBtn).toBeVisible();
     });
-
-
 });
