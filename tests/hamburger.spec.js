@@ -16,9 +16,10 @@ test.describe('flyout should appear and disappear correctly', () => {
     await expect(page).toHaveURL(ROUTES.INVENTORY);
   });
 
-  test('flyout items should be visible when menu is clicked', async () => {
+  test.only('flyout items should be visible when menu is clicked', async () => {
+    await expect(inventoryPage.menuContainer).not.toHaveClass(/is-open/);
     await inventoryPage.openMenu();
-    await expect(inventoryPage.menuContainer).toBeVisible();
+    await expect(inventoryPage.menuContainer).toHaveClass(/is-open/);
     await expect(inventoryPage.allItemsLink).toBeVisible();
     await expect(inventoryPage.aboutLink).toBeVisible();
     await expect(inventoryPage.logoutLink).toBeVisible();
