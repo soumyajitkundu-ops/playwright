@@ -8,7 +8,7 @@ export class BasePage {
         this.logoutLink = page.getByRole('link', { name: 'Logout' });
         this.aboutLink = page.getByRole('link', { name: 'About' });
         this.allItemsLink = page.getByRole('link', { name: 'All Items' });
-        this.cartIconBtn = page.locator("//*[name()='path' and contains(@d,'M3 3h2l2.4')]");
+        this.cartIconBtn = page.locator('[id="shopping_cart_container"]');
         this.cartBadge = page.locator('[data-test="shopping-cart-badge"]');
         this.cartLink = page.getByRole('link', { name: 'Shopping cart' });
     }

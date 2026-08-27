@@ -4,7 +4,7 @@ import { CartPage } from '../pages/CartPage.js';
 import { CheckoutPage } from '../pages/CheckoutPage.js';
 import { ROUTES } from '../constants/routes.js';
 import { TEST_DATA } from '../constants/testData.js';
-
+import { login } from '../helper/loginHelper.js';
 test.describe('Checkout page should work as intended', () => {
   let inventoryPage, cartPage, checkoutPage;
   let itemName, itemPrice;
@@ -13,24 +13,14 @@ test.describe('Checkout page should work as intended', () => {
     inventoryPage = new InventoryPage(page);
     cartPage = new CartPage(page);
     checkoutPage = new CheckoutPage(page);
-
-    // Inject auth script with double quotes
-    await inventoryPage.setAuthSession(TEST_DATA.users.validUser);
-    await inventoryPage.navigate(`${ROUTES.BASE_URL}inventory.html`);
-    
-    await expect(page).toHaveURL(ROUTES.INVENTORY);
-    await inventoryPage.resetAppState();
-
+    await login(page,inventoryPage);
     const firstItemCard = await inventoryPage.getItemByIndex(0);
     itemName = await firstItemCard.locator('[data-test="inventory-item-name"]').innerText();
     itemPrice = await firstItemCard.locator('[data-test="inventory-item-price"]').innerText();
-
     const addToCartBtn = await inventoryPage.getAddToCartBtn(firstItemCard);
     await addToCartBtn.click();
-
     await inventoryPage.goToCart();
     await expect(page).toHaveURL(ROUTES.CART);
-    
     await cartPage.checkoutBtn.click();
     await expect(page).toHaveURL(ROUTES.CHECKOUT_STEP_ONE);
   });

@@ -4,6 +4,7 @@ import { CartPage } from '../pages/CartPage.js';
 import { ItemDetailsPage } from '../pages/ItemDetailsPage.js';
 import { ROUTES } from '../constants/routes.js';
 import { TEST_DATA } from '../constants/testData.js';
+import { login } from '../helper/loginHelper.js';
 
 test.describe('Cart page should work as intended', () => {
   let inventoryPage, cartPage, itemDetailsPage;
@@ -12,13 +13,7 @@ test.describe('Cart page should work as intended', () => {
     inventoryPage = new InventoryPage(page);
     cartPage = new CartPage(page);
     itemDetailsPage = new ItemDetailsPage(page);
-
-    // Inject auth script with double quotes
-    await inventoryPage.setAuthSession(TEST_DATA.users.validUser);
-    await inventoryPage.navigate(`${ROUTES.BASE_URL}inventory.html`);
-    
-    await expect(page).toHaveURL(ROUTES.INVENTORY);
-    await inventoryPage.resetAppState();
+    await login(page,inventoryPage);
   });
 
   test('Empty cart should display correct message', async ({ page }) => {

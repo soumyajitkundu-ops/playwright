@@ -10,7 +10,7 @@ export class CheckoutPage extends BasePage {
         this.finishBtn = page.getByRole('button', { name: 'Finish' });
         this.cancelBtn = page.getByRole('link', { name: 'Cancel' });
         this.backHomeBtn = page.getByRole('link', { name: 'Back Home' });
-        this.successIcon = page.locator("//*[name()='circle' and contains(@cx,'50')]");
+        this.successIcon = page.locator('[data-test="pony-express"]')
         this.itemName = page.locator('[data-test="inventory-item-name"]');
         this.itemPrice = page.locator('[data-test="inventory-item-price"]');
     }

@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { InventoryPage } from '../pages/InventoryPage.js';
 import { ROUTES } from '../constants/routes.js';
 import { TEST_DATA } from '../constants/testData.js';
+import { login } from '../helper/loginHelper.js';
 
 test.describe('TTACart Inventory Sorting Functionality', () => {
   let inventoryPage;
@@ -9,11 +10,8 @@ test.describe('TTACart Inventory Sorting Functionality', () => {
   test.beforeEach(async ({ page }) => {
     inventoryPage = new InventoryPage(page);
     
-    // Inject auth script with double quotes
-    await inventoryPage.setAuthSession(TEST_DATA.users.validUser);
-    await inventoryPage.navigate(`${ROUTES.BASE_URL}inventory.html`);
+    await login(page,inventoryPage);
     
-    await expect(page).toHaveURL(ROUTES.INVENTORY);
   });
 
   test('should sort products by Name (A to Z)', async () => {
